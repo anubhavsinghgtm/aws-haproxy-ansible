@@ -1,0 +1,18 @@
+---
+# tasks file for lb
+
+- name: install haproxy software
+  package:
+    name: "haproxy"
+    state: present
+  become: true 
+- name: copy my conf file of lb
+  template:
+    src: "haproxy.cfg"
+    dest: "/etc/haproxy/haproxy.cfg"
+  become: true
+- name: start service lb
+  service:
+    name: "haproxy"
+    state: started
+  become: true

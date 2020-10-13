@@ -1,0 +1,83 @@
+---
+# tasks file for task3
+
+- name: Create Key Pair
+  ec2_key:
+      name: task3key
+      aws_region: "{{ region }}"
+  register: ec2_key
+- name: Copy Key to Local File
+  copy:
+      content: "{{ ec2_key.key.private_key }}"
+      dest: "{{ key_dest }}"
+      mode: '0600'
+- name: Create Security Group - Allow SSh, HTTP
+  ec2_group:
+      name: task3_web_sg
+      description: sg for web inventory
+      region: "{{ region }}"
+      rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+  register: task3_web_sg
+- name: Create Security Group - Allow SSh, HAProxy
+  ec2_group:
+      name: task3_lb_sg
+      description: sg for lb inventory
+      region: "{{ region }}"
+      rules:
+      - proto: tcp
+        from_port: 8080
+        to_port: 8080
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+  register: task3_lb_sg
+- name: Launch EC2 Instance for webserver
+  ec2:
+      key_name: task3key
+      instance_type: t2.micro
+      image: "{{ image_id }}"
+      wait: yes
+      region: "{{ region }}"
+      count: 2
+      vpc_subnet_id: "{{ subnet }}"
+      group_id: "{{ task3_web_sg.group_id }}"
+      assign_public_ip: yes
+      state: present
+      instance_tags:
+        Name: webserver
+  register: web
+- name: Launch EC2 Instance for lbserver
+  ec2:
+      key_name: task3key
+      instance_type: t2.micro
+      image: "{{ image_id }}"
+      wait: yes
+      region: "{{ region }}"
+      count: 1
+      vpc_subnet_id: "{{ subnet }}"
+      group_id: "{{ task3_lb_sg.group_id }}"
+      assign_public_ip: yes
+      state: present
+      instance_tags:
+        Name: lbserver
+  register: lb
+- name: Refresh Inventory File
+  meta: refresh_inventory
+- pause:
+    minutes: 2

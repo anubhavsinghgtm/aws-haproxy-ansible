@@ -1,0 +1,6 @@
+---
+# vars file for task3
+key_dest: "./mykey.pem"
+region: "ap-south-1"
+image_id: "ami-0ebc1ac48dfd14136"
+subnet: "subnet-04d475f8421ab077c"

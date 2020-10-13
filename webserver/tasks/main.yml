@@ -1,0 +1,22 @@
+---
+# tasks file for webserver
+- name: Install Required Package
+  package:
+    name: python3
+    state: present
+  become: true
+- name: Install Apache Server
+  package: 
+    name: httpd 
+    state: present
+  become: true
+- name: Copy webpage
+  get_url:
+    dest: "/var/www/html"
+    url: "https://raw.githubusercontent.com/anubhavsinghgtm/aws-using-ansible/master/index.html"
+  become: true
+- name: Start Apache Service
+  service: 
+    name: httpd 
+    state: started
+  become: true
